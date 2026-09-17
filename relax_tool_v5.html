@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>打工人放松工具</title>
+<style>
+:root{--gold:#d4af37;--gold2:#f0d878;--line:rgba(212,175,55,.35);}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:transparent;overflow:hidden;}
+
+/* 右下角小圆点 */
+#orb{position:fixed;right:16px;bottom:16px;width:46px;height:46px;border-radius:50%;cursor:pointer;z-index:200;
+  background:radial-gradient(circle at 35% 30%,#3a3a44,#0a0a0c);border:2px solid var(--gold);
+  box-shadow:0 0 16px rgba(212,175,55,.55),inset 0 2px 6px rgba(255,255,255,.18),inset 0 -3px 8px rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gold2);
+  transition:transform .2s,box-shadow .2s;user-select:none;}
+#orb:hover{transform:scale(1.12);box-shadow:0 0 26px rgba(212,175,55,.9),inset 0 2px 6px rgba(255,255,255,.25);}
+#orb:active{transform:scale(.96);}
+
+/* 黑金面板 */
+#panel{position:fixed;right:16px;bottom:72px;width:304px;background:linear-gradient(160deg,#0e0e12,#070708);
+  border:1px solid var(--line);border-radius:16px;padding:14px;z-index:200;display:none;
+  box-shadow:0 14px 48px rgba(0,0,0,.75),inset 0 0 0 1px rgba(212,175,55,.12),inset 0 1px 0 rgba(255,255,255,.06);color:#eee;}
+#panel.open{display:block;animation:pop .25s ease;}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96);}to{opacity:1;transform:none;}}
+.phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.phead b{font-size:14.5px;letter-spacing:1.5px;font-weight:800;
+  background:linear-gradient(90deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.phead .x{cursor:pointer;color:#888;font-size:16px;line-height:1;padding:2px 5px;border-radius:6px;}
+.phead .x:hover{color:var(--gold2);background:rgba(212,175,55,.12);}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;}
+.mode{padding:12px 4px;border-radius:12px;text-align:center;cursor:pointer;font-size:12px;color:#e3e3e6;
+  background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);transition:.18s;}
+.mode:hover{background:rgba(212,175,55,.16);border-color:rgba(212,175,55,.55);
+  box-shadow:0 0 14px rgba(212,175,55,.35);transform:translateY(-1px);}
+.mode .ic{display:block;font-size:22px;margin-bottom:3px;}
+.row{display:flex;gap:8px;margin-top:8px;}
+.btn{flex:1;padding:8px 2px;border-radius:10px;text-align:center;font-size:12px;cursor:pointer;color:#e3e3e6;
+  background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);transition:.18s;}
+.btn:hover{background:rgba(212,175,55,.14);border-color:rgba(212,175,55,.5);
+  box-shadow:0 0 12px rgba(212,175,55,.28);}
+#chatBox{margin-top:10px;border-top:1px solid rgba(212,175,55,.2);padding-top:8px;display:none;}
+#chatBox.open{display:block;}
+#chatWrap{position:relative;}
+#chatFrame{width:100%;height:230px;border:1px solid rgba(212,175,55,.25);border-radius:10px;background:#000;display:block;}
+#chatLoading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:#050507;color:var(--gold2);font-size:13px;letter-spacing:1px;border-radius:10px;z-index:2;}
+.chatbar{display:flex;gap:10px;margin-top:6px;align-items:center;}
+.chatbar a{font-size:11px;color:var(--gold2);text-decoration:none;}
+.chatbar a:hover{text-decoration:underline;}
+.mini{font-size:11px;color:#8a8a8a;margin-top:9px;line-height:1.6;}
+
+/* ===== 狂怒 / 模拟桌面 ===== */
+#rage{position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;display:none;overflow:hidden;
+  background:radial-gradient(120% 100% at 50% 40%,#1a1a22,#000);}
+#rage.on{display:block;}
+#rage::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;box-shadow:inset 0 0 240px 70px rgba(0,0,0,.92);
+  pointer-events:none;z-index:305;}              /* 暗角 */
+#rage::after{content:"";position:fixed;left:0;right:0;top:0;height:8vh;background:#000;z-index:322;pointer-events:none;}
+#rageBot{position:fixed;left:0;right:0;bottom:0;height:8vh;background:#000;z-index:322;pointer-events:none;}
+#grain{position:absolute;top:0;left:0;right:0;bottom:0;z-index:318;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:160px 160px;}
+#desk{position:absolute;top:0;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+  gap:10px;padding:9vh 4vw;align-content:start;z-index:306;}
+.file{background:rgba(22,24,32,.85);border:1px solid rgba(120,140,180,.22);border-radius:10px;padding:10px 6px;text-align:center;
+  color:#cfd8ec;font-size:11px;line-height:1.3;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s,filter .4s;
+  will-change:transform,opacity;}
+.file .ic{font-size:26px;display:block;margin-bottom:4px;}
+.file.boom{transform:scale(.15) rotate(45deg) translateY(50px);opacity:0;filter:blur(5px);}
+#fighter{position:absolute;right:9%;bottom:11%;z-index:310;width:200px;max-width:42vw;transform:scale(.3);transform-origin:bottom center;
+  filter:drop-shadow(0 0 0 transparent);transition:transform 1.1s cubic-bezier(.2,.9,.25,1),opacity .6s;pointer-events:none;display:block;}
+#fighter.grow{transform:scale(1.5);filter:drop-shadow(0 0 32px rgba(240,216,120,.9));}
+#fighter.chill{animation:breathe 3.2s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(240,216,120,.5));}
+#fighter.smash{animation:hit .5s;}
+@keyframes hit{0%{transform:scale(1.5) translateY(0);}30%{transform:scale(1.75) translateY(-30px);}100%{transform:scale(1.5);}}
+@keyframes breathe{0%,100%{transform:scale(.9);}50%{transform:scale(1);}}
+#fighterFallback.breathe{animation:breathe 3.2s ease-in-out infinite;}
+#flash{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0;z-index:340;pointer-events:none;}
+#flash.go{animation:fl .55s;}
+@keyframes fl{0%{opacity:0;}9%{opacity:.92;}24%{opacity:0;}38%{opacity:.7;}58%{opacity:0;}}
+.shake{animation:shk .6s;}
+@keyframes shk{0%,100%{transform:translate(0,0);}20%{transform:translate(-12px,6px);}40%{transform:translate(10px,-8px);}
+  60%{transform:translate(-8px,4px);}80%{transform:translate(6px,-4px);}}
+#shock{position:fixed;left:50%;top:55%;border-radius:50%;border:3px solid rgba(240,216,120,.85);
+  width:12px;height:12px;z-index:315;transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;}
+#shock.go{animation:shk2 1.1s ease-out;}
+@keyframes shk2{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;}100%{transform:translate(-50%,-50%) scale(130);opacity:0;}}
+#rageTip{position:fixed;left:50%;bottom:12vh;transform:translateX(-50%);z-index:330;color:var(--gold2);font-size:16px;
+  letter-spacing:2px;opacity:0;transition:opacity .4s;text-shadow:0 2px 12px rgba(0,0,0,.9);white-space:nowrap;font-weight:700;}
+#rageTip.show{opacity:1;}
+#restore{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:335;color:#9fe6a0;font-size:17px;
+  letter-spacing:1px;opacity:0;transition:opacity .5s;text-shadow:0 2px 12px rgba(0,0,0,.9);}
+#restore.show{opacity:1;}
+#modeText{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);z-index:330;text-align:center;
+  color:#cfd8ec;opacity:0;transition:opacity .4s;text-shadow:0 2px 12px rgba(0,0,0,.9);}
+#modeText.show{opacity:1;}
+.modeBig{font-size:56px;animation:floaty 3s ease-in-out infinite;line-height:1;}
+@keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+.modeMain{font-size:16px;letter-spacing:1px;margin-top:10px;}
+.modeSub{font-size:13px;color:#9fb3d8;margin-top:8px;letter-spacing:3px;animation:fade 3s ease-in-out infinite;}
+@keyframes fade{0%,100%{opacity:.45;}50%{opacity:1;}}
+</style>
+</head>
+<body>
+<div id="orb" title="打工人放松工具">⚔</div>
+
+<div id="panel">
+  <div class="phead"><b>⚜ 打工人放松工具</b><span class="x" id="pClose">✕</span></div>
+  <div class="modes">
+    <div class="mode" data-m="rage"><span class="ic">💥</span>狂怒</div>
+    <div class="mode" data-m="rest"><span class="ic">🌙</span>休息</div>
+    <div class="mode" data-m="free"><span class="ic">🌿</span>自由</div>
+  </div>
+  <div class="row">
+    <div class="btn" id="photoBtn">📷 换角色</div>
+    <div class="btn" id="soundBtn">🔊 音效</div>
+    <div class="btn" id="chatBtn">💬 Distill</div>
+  </div>
+  <div id="chatBox">
+    <div id="chatWrap">
+      <iframe id="chatFrame" allow="fullscreen"></iframe>
+      <div id="chatLoading">Distill 加载中…</div>
+    </div>
+    <div class="chatbar"><a href="https://distill.uichain.org" target="_blank" rel="noopener">↗ 在浏览器打开 Distill</a></div>
+  </div>
+  <div class="mini">狂怒＝把桌面轰碎发泄（仅特效，文件一个不删）· 休息＝睡觉 · 自由＝模拟人生。快捷键 1/2/3，H 收起。</div>
+  <input type="file" id="photoInput" accept="image/*" style="display:none">
+</div>
+
+<!-- 狂怒 / 模拟桌面 -->
+<div id="rage">
+  <div id="desk"></div>
+  <span id="rageBot"></span>
+  <div id="grain"></div>
+  <img id="fighter" src="assets/hero_cut.png"
+       onerror="this.style.display='none';document.getElementById('fighterFallback').style.display='block'">
+  <div id="fighterFallback" style="display:none;position:absolute;right:9%;bottom:11%;z-index:310;font-size:120px;">🗡️</div>
+  <div id="shock"></div>
+  <div id="flash"></div>
+  <div id="rageTip">⚡ 全部毁灭 ⚡</div>
+  <div id="restore">✓ 文件都还在，安心</div>
+  <div id="modeText"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const orb=$('#orb'),panel=$('#panel'),rage=$('#rage');
+let soundOn=true, busy=false;
+
+orb.onclick=()=>panel.classList.toggle('open');
+$('#pClose').onclick=()=>panel.classList.remove('open');
+
+document.querySelectorAll('.mode').forEach(m=>m.onclick=()=>{
+  const k=m.dataset.m;
+  if(k==='rage') startRage();
+  else if(k==='rest') startRest();
+  else startFree();
+});
+
+/* 换角色：本地 base64，持久化 */
+$('#photoBtn').onclick=()=>$('#photoInput').click();
+$('#photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{const h=$('#fighter');h.src=ev.target.result;h.style.display='block';
+    $('#fighterFallback').style.display='none';try{localStorage.setItem('relaxHero',ev.target.result);}catch(_){}};
+  r.readAsDataURL(f);};
+(function(){try{const h=localStorage.getItem('relaxHero');if(h)$('#fighter').src=h;}catch(_){}})();
+
+/* 音效：WebAudio 合成低频砸击 + 噪声爆，不依赖音频文件 */
+$('#soundBtn').onclick=function(){soundOn=!soundOn;this.textContent=soundOn?'🔊 音效':'🔇 静音';};
+let AC=null;
+function boom(){if(!soundOn)return;try{
+  AC=AC||new (window.AudioContext||window.webkitAudioContext)();const ac=AC;
+  const o=ac.createOscillator(),g=ac.createGain();o.type='sine';
+  o.frequency.setValueAtTime(130,ac.currentTime);o.frequency.exponentialRampToValueAtTime(38,ac.currentTime+.5);
+  g.gain.setValueAtTime(.55,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.6);
+  o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.6);
+  const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*.3),ac.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const n=ac.createBufferSource();n.buffer=buf;const ng=ac.createGain();ng.gain.value=.35;
+  n.connect(ng).connect(ac.destination);n.start();
+}catch(_){}}
+
+/* 聊天：直链 Distill，首次点击才加载 + 加载提示 + 浏览器打开兜底 */
+const cf=$('#chatFrame');
+$('#chatBtn').onclick=()=>{const c=$('#chatBox');c.classList.toggle('open');
+  if(c.classList.contains('open')&&!cf.dataset.loaded){$('#chatLoading').style.display='flex';cf.src='https://distill.uichain.org';}};
+cf.onload=()=>{$('#chatLoading').style.display='none';cf.dataset.loaded='1';};
+
+/* 模拟桌面文件（看起来像你自己的桌面，纯视觉，不读真实文件、不删除） */
+const FILES=['文档','照片','下载','工作','周报.docx','报销.xlsx','老板语音.m4a','催款邮件.eml','婚礼邀请.pdf',
+ '简历2026.pdf','旅游照片','全家福.jpg','通讯录.vcf','待办.txt','截图001.png','代码仓库.zip','录屏.mp4','歌单.m3u',
+ '账单.pdf','合同扫描.pdf','需求变更.eml','服务器告警.txt','理财笔记.md','PPT模板.pptx','客户名单.xlsx','吐槽.txt',
+ '安装包.dmg','证书.p12','读书笔记.md','直播回放.mp4','素材包.zip','配置.json','会议纪要.docx','待审.pdf','头像.jpg',
+ '草稿.txt','预算表.xls','宣传海报.png','报价单.xlsx','发票.pdf','备忘录.md','学习资料.zip','桌面整理','收藏'];
+const ICONS={'文档':'📁','照片':'📁','下载':'📁','工作':'📁','旅游照片':'📁','桌面整理':'📁','收藏':'📁',
+ '代码仓库.zip':'📦','素材包.zip':'📦','安装包.dmg':'📦','学习资料.zip':'📦',
+ '周报.docx':'📄','报销.xlsx':'📊','需求变更.eml':'✉️','催款邮件.eml':'✉️','婚礼邀请.pdf':'📕','简历2026.pdf':'📕',
+ '账单.pdf':'📕','合同扫描.pdf':'📕','待审.pdf':'📕','发票.pdf':'📕','会议纪要.docx':'📄','PPT模板.pptx':'📊',
+ '报价单.xlsx':'📊','预算表.xls':'📊','客户名单.xlsx':'📊','老板语音.m4a':'🎵','歌单.m3u':'🎵','录屏.mp4':'🎬',
+ '直播回放.mp4':'🎬','全家福.jpg':'🖼️','截图001.png':'🖼️','头像.jpg':'🖼️','宣传海报.png':'🖼️','通讯录.vcf':'📇',
+ '待办.txt':'🗒️','吐槽.txt':'🗒️','草稿.txt':'🗒️','读书笔记.md':'🗒️','理财笔记.md':'🗒️','备忘录.md':'🗒️',
+ '配置.json':'⚙️','证书.p12':'🔐','服务器告警.txt':'🚨'};
+
+function buildFiles(){const d=$('#desk');d.innerHTML='';
+  for(let i=0;i<FILES.length;i++){const f=document.createElement('div');f.className='file';
+    f.innerHTML='<span class="ic">'+(ICONS[FILES[i]]||'📄')+'</span>'+FILES[i];d.appendChild(f);}}
+
+function startRage(){
+  if(busy) return; busy=true;
+  buildFiles();
+  const fig=$('#fighter');
+  fig.style.transform='';fig.style.opacity='';fig.style.transition='';
+  fig.classList.remove('grow','chill','smash');
+  panel.classList.remove('open');
+  rage.classList.add('on');
+  void fig.offsetWidth;            /* 重置动画 */
+  fig.classList.add('grow');       /* 由小长大、肌肉发光 */
+  setTimeout(()=>{
+    fig.classList.add('smash');boom();
+    $('#flash').classList.add('go');$('#shock').classList.add('go');
+    document.body.classList.add('shake');
+    setTimeout(()=>document.body.classList.remove('shake'),600);
+    $('#rageTip').textContent='⚡ 全部毁灭 ⚡';$('#rageTip').classList.add('show');
+    const fs=[...document.querySelectorAll('.file')];
+    fs.forEach((f,i)=>setTimeout(()=>f.classList.add('boom'),200+i*35));   /* 整屏成波粉碎 */
+    const span=fs.length*35;
+    setTimeout(()=>$('#rageTip').classList.remove('show'),span+400);
+    setTimeout(()=>{                 /* 约5秒后恢复 */
+      fig.classList.remove('grow');boom();
+      $('#rageTip').textContent='呼……爽了';$('#rageTip').classList.add('show');
+      fig.style.transition='transform .8s, opacity .8s';
+      fig.style.transform='scale(0)';fig.style.opacity='0';
+      $('#restore').classList.add('show');
+      setTimeout(()=>{rage.classList.remove('on');
+        $('#restore').classList.remove('show');
+        $('#rageTip').classList.remove('show');
+        fig.classList.remove('smash');
+        $('#flash').classList.remove('go');$('#shock').classList.remove('go');
+        busy=false;
+      },1000);
+    },span+2400);
+  },1100);
+}
+
+function showMode(text,tip,emoji,sub){
+  if(busy) return; busy=true;
+  panel.classList.remove('open');
+  const fig=$('#fighter'),fb=$('#fighterFallback');
+  fig.style.transform='';fig.style.opacity='';fig.style.transition='';
+  fig.classList.remove('grow','smash');fig.classList.add('chill');
+  if(fb.style.display==='block') fb.classList.add('breathe');
+  rage.classList.add('on');
+  $('#desk').innerHTML='<div id="modeText" class="show"><div class="modeBig">'+emoji+
+    '</div><div class="modeMain">'+text+'</div><div class="modeSub">'+sub+'</div></div>';
+  $('#rageTip').textContent=tip;$('#rageTip').classList.add('show');
+  setTimeout(()=>{rage.classList.remove('on');fig.classList.remove('chill');fb.classList.remove('breathe');
+    $('#rageTip').classList.remove('show');busy=false;},3600);
+}
+function startRest(){showMode('休息中… 放下手里的事','🌙 好好歇一会儿','🌙','Z z z 慢慢飘');}
+function startFree(){showMode('自由心流 · 喝杯咖啡','🌿 切换松弛模式','🌿','发会儿呆，也挺好');}
+
+/* 快捷键 */
+document.addEventListener('keydown',e=>{
+  if(e.target&&e.target.tagName==='INPUT')return;
+  if(busy)return;
+  if(e.key==='1')startRage();
+  else if(e.key==='2')startRest();
+  else if(e.key==='3')startFree();
+  else if(e.key==='h'||e.key==='H')panel.classList.remove('open');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Python caches (not part of this repo)
+**/__pycache__/
+*.pyc
+
+# Large / derived artifacts — intentionally NOT committed
+**/*.onnx
+**/*.feather
+**/*.dmg
+**/*.zip
+**/*.bin
+
+# Local secrets (defensive — this repo ships none)
+*.env
+.env
+*.local
